@@ -418,15 +418,15 @@ python benchmarks/run_validation.py
 ## Support & Community
 
 **Need Help?**
-- 📖 [Full Documentation](docs/)
-- 💬 [GitHub Discussions](https://github.com/yourusername/ai-sentinel/discussions)
-- 🐛 [Report Issues](https://github.com/yourusername/ai-sentinel/issues)
-- 📧 Email: [your-email@domain.com]
+- [Full Documentation -- coming soon...](docs/)
+- [GitHub Discussions](https://github.com/Nicailie/ai-sentinel/discussions)
+- [Report Issues](https://github.com/Nicailie/ai-sentinel/issues)
+- Email: [nicecailiei@gmail.com]
 
 **Stay Updated:**
-- ⭐ Star this repo to follow progress
-- 👀 Watch for new releases
-- 🗣️ Join discussions about AI safety
+- Star this repo to follow progress
+- Watch for new releases
+- Join discussions about AI safety
 
 ---
 
