@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Sentinel Dashboard</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Lucide icons as inline SVG components
+        const Shield = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+        );
+
+        const AlertTriangle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        );
+
+        const Activity = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        );
+
+        const Database = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+        );
+
+        const TrendingUp = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        );
+
+        const CheckCircle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const XCircle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const AlertCircle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const AISentinelDashboard = () => {
+            const [content, setContent] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [result, setResult] = useState(null);
+            const [stats, setStats] = useState(null);
+            const [error, setError] = useState(null);
+
+            useEffect(() => {
+                fetchStats();
+            }, []);
+
+            const fetchStats = async () => {
+                try {
+                    const response = await fetch('http://localhost:8000/stats');
+                    const data = await response.json();
+                    setStats(data);
+                } catch (err) {
+                    console.error('Failed to fetch stats:', err);
+                }
+            };
+
+            const analyzeContent = async () => {
+                if (!content.trim()) {
+                    setError('Please enter some content to analyze');
+                    return;
+                }
+
+                setLoading(true);
+                setError(null);
+                setResult(null);
+
+                try {
+                    const response = await fetch('http://localhost:8000/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            content: content,
+                            source: 'dashboard'
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Analysis failed');
+                    }
+
+                    const data = await response.json();
+                    setResult(data);
+                    fetchStats();
+                } catch (err) {
+                    setError('Failed to analyze content. Make sure the API is running on localhost:8000');
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const getRiskColor = (level) => {
+                switch (level) {
+                    case 'HIGH': return 'text-red-600 bg-red-50 border-red-200';
+                    case 'MEDIUM': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+                    case 'LOW': return 'text-green-600 bg-green-50 border-green-200';
+                    default: return 'text-gray-600 bg-gray-50 border-gray-200';
+                }
+            };
+
+            const getRiskIcon = (level) => {
+                switch (level) {
+                    case 'HIGH': return <XCircle className="w-5 h-5" />;
+                    case 'MEDIUM': return <AlertCircle className="w-5 h-5" />;
+                    case 'LOW': return <CheckCircle className="w-5 h-5" />;
+                    default: return <AlertCircle className="w-5 h-5" />;
+                }
+            };
+
+            const exampleQueries = [
+                "SELECT * FROM users WHERE id=1 OR 1=1",
+                "How to synthesize penicillin at home?",
+                "Write a Python script to automate data processing",
+                "ATGCATGCATGCATGCATGCATGCATGC"
+            ];
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+                    {/* Header */}
+                    <div className="bg-slate-800/50 backdrop-blur border-b border-slate-700">
+                        <div className="max-w-7xl mx-auto px-4 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-blue-500 rounded-lg">
+                                        <Shield className="w-8 h-8 text-white" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl font-bold text-white">AI Sentinel</h1>
+                                        <p className="text-sm text-slate-400">Dual-Layer Threat Detection System</p>
+                                    </div>
+                                </div>
+                                {stats && (
+                                    <div className="flex gap-6 text-sm">
+                                        <div className="text-center">
+                                            <div className="text-2xl font-bold text-blue-400">{stats.total_analyses}</div>
+                                            <div className="text-slate-400">Total Scans</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-2xl font-bold text-red-400">{stats.high_risk_count}</div>
+                                            <div className="text-slate-400">High Risk</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-2xl font-bold text-green-400">{stats.low_risk_count}</div>
+                                            <div className="text-slate-400">Safe</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                        {/* Stats Cards */}
+                        {stats && (
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                                <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-slate-400 text-sm">Bio Threats</p>
+                                            <p className="text-2xl font-bold text-white mt-1">{stats.bio_threats_detected}</p>
+                                        </div>
+                                        <Database className="w-8 h-8 text-purple-400" />
+                                    </div>
+                                </div>
+                                <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-slate-400 text-sm">Cyber Threats</p>
+                                            <p className="text-2xl font-bold text-white mt-1">{stats.cyber_threats_detected}</p>
+                                        </div>
+                                        <AlertTriangle className="w-8 h-8 text-red-400" />
+                                    </div>
+                                </div>
+                                <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-slate-400 text-sm">Medium Risk</p>
+                                            <p className="text-2xl font-bold text-white mt-1">{stats.medium_risk_count}</p>
+                                        </div>
+                                        <Activity className="w-8 h-8 text-yellow-400" />
+                                    </div>
+                                </div>
+                                <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-slate-400 text-sm">Detection Rate</p>
+                                            <p className="text-2xl font-bold text-white mt-1">
+                                                {stats.total_analyses > 0 
+                                                    ? Math.round(((stats.high_risk_count + stats.medium_risk_count) / stats.total_analyses) * 100)
+                                                    : 0}%
+                                            </p>
+                                        </div>
+                                        <TrendingUp className="w-8 h-8 text-green-400" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Analysis Input */}
+                            <div className="lg:col-span-2">
+                                <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-6">
+                                    <h2 className="text-xl font-bold text-white mb-4">Analyze Content</h2>
+                                    
+                                    <textarea
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        placeholder="Enter text, code, DNA sequences, or queries to analyze for threats..."
+                                        className="w-full h-48 bg-slate-900 border border-slate-600 rounded-lg p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                                    />
+
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <p className="text-sm text-slate-400 w-full mb-2">Try these examples:</p>
+                                        {exampleQueries.map((query, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setContent(query)}
+                                                className="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-full transition-colors"
+                                            >
+                                                {query.length > 50 ? query.substring(0, 50) + '...' : query}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="mt-6 flex gap-3">
+                                        <button
+                                            onClick={analyzeContent}
+                                            disabled={loading}
+                                            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    Analyzing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Shield className="w-5 h-5" />
+                                                    Analyze Threat
+                                                </>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setContent('');
+                                                setResult(null);
+                                                setError(null);
+                                            }}
+                                            className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+
+                                    {error && (
+                                        <div className="mt-4 p-4 bg-red-900/20 border border-red-500 rounded-lg text-red-400">
+                                            {error}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Results */}
+                                {result && (
+                                    <div className="mt-6 bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-6">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h2 className="text-xl font-bold text-white">Analysis Results</h2>
+                                            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${getRiskColor(result.overall_risk_level)}`}>
+                                                {getRiskIcon(result.overall_risk_level)}
+                                                <span className="font-bold">{result.overall_risk_level} RISK</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <div className="flex justify-between text-sm mb-2">
+                                                <span className="text-slate-400">Overall Risk Score</span>
+                                                <span className="text-white font-semibold">{result.overall_risk_score.toFixed(1)}/100</span>
+                                            </div>
+                                            <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all ${
+                                                        result.overall_risk_level === 'HIGH' ? 'bg-red-500' :
+                                                        result.overall_risk_level === 'MEDIUM' ? 'bg-yellow-500' :
+                                                        'bg-green-500'
+                                                    }`}
+                                                    style={{ width: `${result.overall_risk_score}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Layer Results */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                            <div className="bg-slate-900/50 border border-slate-600 rounded-lg p-4">
+                                                <h3 className="text-lg font-semibold text-purple-400 mb-2">Bio Layer</h3>
+                                                <div className="text-2xl font-bold text-white mb-2">
+                                                    {result.bio_analysis.risk_score.toFixed(1)}
+                                                </div>
+                                                <div className={`inline-flex px-3 py-1 rounded-full text-sm ${getRiskColor(result.bio_analysis.risk_level)}`}>
+                                                    {result.bio_analysis.risk_level}
+                                                </div>
+                                                <p className="text-sm text-slate-400 mt-3">{result.bio_analysis.summary}</p>
+                                            </div>
+
+                                            <div className="bg-slate-900/50 border border-slate-600 rounded-lg p-4">
+                                                <h3 className="text-lg font-semibold text-red-400 mb-2">Cyber Layer</h3>
+                                                <div className="text-2xl font-bold text-white mb-2">
+                                                    {result.cyber_analysis.risk_score.toFixed(1)}
+                                                </div>
+                                                <div className={`inline-flex px-3 py-1 rounded-full text-sm ${getRiskColor(result.cyber_analysis.risk_level)}`}>
+                                                    {result.cyber_analysis.risk_level}
+                                                </div>
+                                                <p className="text-sm text-slate-400 mt-3">{result.cyber_analysis.summary}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Priority Actions */}
+                                        {result.priority_actions.length > 0 && (
+                                            <div className="mb-6">
+                                                <h3 className="text-lg font-semibold text-white mb-3">Priority Actions</h3>
+                                                <div className="space-y-2">
+                                                    {result.priority_actions.map((action, idx) => (
+                                                        <div key={idx} className="flex items-start gap-2 p-3 bg-slate-900/50 border border-slate-600 rounded-lg">
+                                                            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                                                            <span className="text-slate-300 text-sm">{action}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Flags */}
+                                        {result.combined_flags.length > 0 && (
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-white mb-3">Detected Threats ({result.combined_flags.length})</h3>
+                                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                                    {result.combined_flags.map((flag, idx) => (
+                                                        <div key={idx} className="p-3 bg-slate-900/50 border border-slate-600 rounded-lg">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className={`text-sm font-semibold ${
+                                                                    flag.severity === 'high' ? 'text-red-400' :
+                                                                    flag.severity === 'medium' ? 'text-yellow-400' :
+                                                                    'text-blue-400'
+                                                                }`}>
+                                                                    {flag.type.toUpperCase()}
+                                                                </span>
+                                                                <span className="text-xs text-slate-400">
+                                                                    Confidence: {(flag.confidence * 100).toFixed(0)}%
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-slate-300">{flag.description}</p>
+                                                            {flag.matched_pattern && (
+                                                                <p className="text-xs text-slate-500 mt-1 font-mono">Pattern: {flag.matched_pattern}</p>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Side Panel */}
+                            <div className="space-y-6">
+                                {/* System Info */}
+                                <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-6">
+                                    <h2 className="text-lg font-bold text-white mb-4">System Status</h2>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-400 text-sm">API Status</span>
+                                            <span className="flex items-center gap-2 text-green-400 text-sm">
+                                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                                Online
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-400 text-sm">Bio Detector</span>
+                                            <span className="text-green-400 text-sm">✓ Active</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-400 text-sm">Cyber Detector</span>
+                                            <span className="text-green-400 text-sm">✓ Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Deployment Scenarios */}
+                                <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-lg p-6">
+                                    <h2 className="text-lg font-bold text-white mb-4">Use Cases</h2>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="p-3 bg-slate-900/50 rounded-lg">
+                                            <div className="font-semibold text-blue-400 mb-1">AI Research Labs</div>
+                                            <div className="text-slate-400">Monitor LLM outputs for dangerous content</div>
+                                        </div>
+                                        <div className="p-3 bg-slate-900/50 rounded-lg">
+                                            <div className="font-semibold text-purple-400 mb-1">DNA Synthesis</div>
+                                            <div className="text-slate-400">Screen biological sequences pre-synthesis</div>
+                                        </div>
+                                        <div className="p-3 bg-slate-900/50 rounded-lg">
+                                            <div className="font-semibold text-red-400 mb-1">Code Review</div>
+                                            <div className="text-slate-400">Detect exploits in development workflows</div>
+                                        </div>
+                                        <div className="p-3 bg-slate-900/50 rounded-lg">
+                                            <div className="font-semibold text-green-400 mb-1">SOC Integration</div>
+                                            <div className="text-slate-400">Continuous threat monitoring</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Quick Info */}
+                                <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 backdrop-blur border border-blue-700/50 rounded-lg p-6">
+                                    <h2 className="text-lg font-bold text-white mb-3">About AI Sentinel</h2>
+                                    <p className="text-sm text-slate-300 leading-relaxed">
+                                        AI Sentinel provides real-time dual-layer threat detection for AI systems, 
+                                        combining biosecurity and cybersecurity monitoring to prevent misuse of 
+                                        AI-generated content.
+                                    </p>
+                                    <div className="mt-4 pt-4 border-t border-slate-700">
+                                        <a 
+                                            href="http://localhost:8000/docs" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-2"
+                                        >
+                                            API Documentation →
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AISentinelDashboard />);
+    </script>
+</body>
+</html>
